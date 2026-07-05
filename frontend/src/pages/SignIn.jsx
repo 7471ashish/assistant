@@ -5,7 +5,7 @@ import { FaEyeSlash } from "react-icons/fa";
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useContext } from 'react';
-import { userDataContext } from '../context/userContext';
+import { userDataContext } from '../context/UserContext';
 import axios from 'axios';
 const SignIn = () => {
 
