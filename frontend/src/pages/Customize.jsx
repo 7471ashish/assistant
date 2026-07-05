@@ -3,7 +3,7 @@ import image1 from '../assets/image1.webp'
 import image2 from '../assets/image2.webp'
 import Card from '../components/Card'
 import { useContext } from 'react'
-import { userDataContext } from '../context/userContext'
+import { userDataContext } from '../context/UserContext'
 import { useNavigate } from 'react-router-dom'
 import { IoMdArrowRoundBack } from "react-icons/io";
 const Customize = () => {
