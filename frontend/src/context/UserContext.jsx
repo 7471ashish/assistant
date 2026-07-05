@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useState } from 'react'
 import { createContext } from 'react'
 export const userDataContext=createContext()
-const serverUrl="http://localhost:8000"
+const serverUrl="https://assistant-backend-ivdq.onrender.com"
 
 const UserContext = ({children}) => {
     const [userData,setUserData]=useState(null)
