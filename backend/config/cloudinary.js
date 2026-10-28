@@ -10,14 +10,17 @@ const uploadOnCLoudinary=async(filePath)=>{
     try{
    const uploadResult=await cloudinary.uploader.upload(filePath)
     
-   fs.unlinkSync(filePath)
+   if (fs.existsSync(filePath)) {
+     fs.unlinkSync(filePath)
+   }
    return uploadResult.secure_url
     }
     catch(err){
-     fs.unlinkSync(filePath)
-     return resizeBy.status(500).json({
-        message:"cloudinary error"
-     })
+     if (fs.existsSync(filePath)) {
+       fs.unlinkSync(filePath)
+     }
+     console.error("Cloudinary upload error:", err)
+     throw new Error("Failed to upload image")
     }
 
 }

@@ -1,84 +1,180 @@
-import React from 'react'
+import React, { useContext, useState } from 'react'
 import bg from '../assets/futuristic background.webp'
-import { FaEye } from "react-icons/fa";
-import { FaEyeSlash } from "react-icons/fa";
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useContext } from 'react';
-import { userDataContext } from '../context/userContext';
-import axios from 'axios';
+import { FaEye, FaEyeSlash, FaUser, FaEnvelope, FaLock } from 'react-icons/fa'
+import { RiRobot2Fill, RiSparklingFill } from 'react-icons/ri'
+import { Link, useNavigate } from 'react-router-dom'
+import { userDataContext } from '../context/UserContext'
+import axios from 'axios'
+
 const SignUp = () => {
+  const { serverUrl, setUserData } = useContext(userDataContext)
+  const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [err, setErr] = useState("")
+  const navigate = useNavigate()
 
-    const {serverUrl,userData,setUserData}=useContext(userDataContext)
-    const[loading,setLoading]=useState(false)
-    const [showPassword,setShowPassword]=useState(false)
-    const[err,setErr]=useState("")
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
 
-    const navigate=useNavigate()
+  const handleSignUp = async (event) => {
+    event.preventDefault()
+    setErr("")
 
-    const [name,setName]=useState("")
-    const [email,setEmail]=useState("")
-    const [password,setPassword]=useState("")
-
-    const handleSignUp=async (event)=>{
-        event.preventDefault()
-        setErr("")
-        setLoading(true)
-        navigate("/customize")
-     try{
-let result =await axios.post(`${serverUrl}/api/auth/signup`,{
-    name,email,password
-},{withCredentials:true})
-setLoading(false)
-setUserData(result.data)
-console.log(result)
-     }
-     catch(err){
-      console.log(err)
-      setLoading(false)
-      setUserData(null)
-      setErr(err.response.data.message)
-     }
+    if (password.length < 6) {
+      setErr("Password must be at least 6 characters.")
+      return
     }
 
+    setLoading(true)
+    try {
+      const result = await axios.post(
+        `${serverUrl}/api/auth/signup`,
+        { name: name.trim(), email: email.trim(), password },
+        { withCredentials: true }
+      )
+      setUserData(result.data)
+      navigate("/customize")
+    } catch (error) {
+      console.error("Signup error:", error)
+      const errorMsg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to create account. Please try again."
+      setErr(errorMsg)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <div className='w-full h-[100vh] bg-cover flex justify-center items-center' style={{backgroundImage:`url(${bg})`}}>
-     <form className='w-[90%] h-[600px] max-w-[500px] bg-[#00000085] backdrop-blur-md shadow-lg shadow-black flex flex-col items-center justify-center gap-3' onSubmit={handleSignUp}>
+    <div
+      className="min-h-screen w-full bg-cover bg-center flex justify-center items-center p-4 relative overflow-hidden"
+      style={{ backgroundImage: `url("${bg}")` }}
+    >
+      {/* Dark tint overlay with ambient glow */}
+      <div className="absolute inset-0 bg-[#030712]/80 backdrop-blur-sm pointer-events-none" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/15 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-[120px] pointer-events-none" />
 
-      <h1 className='text-white text-[30px] text-center'>Welcome to your personal <span className='text-blue-800 font-bold'>Virtual Assistant</span></h1>
- 
-      <input type="text" placeholder='Enter your name' className='w-full h-[60px] outline-none border-2 border-white bg-transparent  text-white place-content-center placeholder-gray-300 rounded-full p-4' required onChange={(e)=>setName(e.target.value)} value={name}/>
+      {/* Main Glass Card */}
+      <div className="relative w-full max-w-[460px] glass-panel-glow rounded-3xl p-8 sm:p-10 z-10">
+        {/* Header Badge */}
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 p-[1px] shadow-lg shadow-cyan-500/25 mb-4">
+            <div className="w-full h-full bg-[#070d1e] rounded-2xl flex items-center justify-center text-cyan-400">
+              <RiRobot2Fill className="text-2xl" />
+            </div>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Create Your Account
+          </h1>
+          <p className="text-sm text-slate-400 mt-2 flex items-center gap-1.5">
+            <RiSparklingFill className="text-cyan-400 text-xs" />
+            Empower your world with personal AI
+          </p>
+        </div>
 
-      <input type="Email" placeholder='Enter your Email' className='w-full h-[60px] outline-none border-2 border-white bg-transparent  text-white place-content-center placeholder-gray-300 rounded-full p-4' required onChange={(e)=>setEmail(e.target.value)} value={email}/>
+        {/* Form */}
+        <form className="flex flex-col gap-4" onSubmit={handleSignUp}>
+          {/* Name Field */}
+          <div className="relative">
+            <label className="text-xs font-semibold text-slate-300 ml-1 mb-1 block uppercase tracking-wider">
+              Full Name
+            </label>
+            <div className="relative flex items-center">
+              <FaUser className="absolute left-4 text-slate-400 text-sm" />
+              <input
+                type="text"
+                placeholder="Tony Stark"
+                className="w-full h-12 pl-11 pr-4 rounded-xl glass-input text-white placeholder-slate-500 text-sm outline-none"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+          </div>
 
-      <div className='w-full h-[60px]  border-2 border-white bg-transparent  text-white rounded-full relative pl-4 '>
-          <input type={showPassword?"text":"password"} placeholder='password' className='w-full h-full rounded-full outline-none bg-transparent placeholder-gray-300 ' required onChange={(e)=>setPassword(e.target.value)} value={password} />
-       {showPassword ? (
-  <FaEye
-    className='absolute top-[17px] right-[20px] text-white h-[25px] w-[25px] cursor-pointer'
-    onClick={() => setShowPassword(false)}
-  />
-) : (
-  <FaEyeSlash
-    className='absolute top-[17px] right-[20px] text-white h-[25px] w-[25px] cursor-pointer'
-    onClick={() => setShowPassword(true)}
-  />
-)}   
+          {/* Email Field */}
+          <div className="relative">
+            <label className="text-xs font-semibold text-slate-300 ml-1 mb-1 block uppercase tracking-wider">
+              Email Address
+            </label>
+            <div className="relative flex items-center">
+              <FaEnvelope className="absolute left-4 text-slate-400 text-sm" />
+              <input
+                type="email"
+                placeholder="you@example.com"
+                className="w-full h-12 pl-11 pr-4 rounded-xl glass-input text-white placeholder-slate-500 text-sm outline-none"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Password Field */}
+          <div className="relative">
+            <label className="text-xs font-semibold text-slate-300 ml-1 mb-1 block uppercase tracking-wider">
+              Password
+            </label>
+            <div className="relative flex items-center">
+              <FaLock className="absolute left-4 text-slate-400 text-sm" />
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="At least 6 characters"
+                className="w-full h-12 pl-11 pr-11 rounded-xl glass-input text-white placeholder-slate-500 text-sm outline-none"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                className="absolute right-4 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label="Toggle password visibility"
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+          </div>
+
+          {/* Error Message */}
+          {err && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping" />
+              {err}
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full h-12 mt-2 rounded-xl bg-gradient-to-r from-cyan-500 via-sky-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold text-sm shadow-lg shadow-cyan-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Initializing Account...</span>
+              </>
+            ) : (
+              <span>Create Assistant Account</span>
+            )}
+          </button>
+        </form>
+
+        {/* Footer Link */}
+        <p className="text-center text-sm text-slate-400 mt-6">
+          Already have an account?{' '}
+          <Link
+            to="/signin"
+            className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors ml-1"
+          >
+            Sign In
+          </Link>
+        </p>
       </div>
-
-      {err.length>0 && <p className='text-red-600'>{err}</p>}
-
-   <button className='min-w-[150px] h-[60px] rounded-xl bg-white text-black' disabled={loading}>{loading?"Loading..":"Sign Up"}</button>
-
-   <p className='text-white text-lg' onClick={()=>{
-    navigate('/signin')
-   }}>Already have an account ?<span className='text-blue-400'>Sign In</span></p>
-
-
-     </form>
-
-
-
     </div>
   )
 }

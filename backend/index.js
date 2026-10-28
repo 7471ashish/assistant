@@ -1,6 +1,6 @@
 import express from "express"
 import dotenv from "dotenv"
-import { connect } from "mongoose"
+import mongoose from "mongoose"
 import connectDb from "./config/db.js"
 import authRouter from "./routes/auth.routes.js"
 import cookieParser from "cookie-parser"
@@ -11,24 +11,33 @@ dotenv.config()
 const app=express()
 
 app.use(cors({
-    origin:"http://localhost:5173",
-    credentials:true
+    origin: true,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie", "X-Requested-With"]
 }))
-dotenv.config();
 
-console.log("Gemini Key:", process.env.GEMINI_API_KEY);
 app.use(express.json())
 app.use(cookieParser())
 const port=process.env.PORT||5000
 app.use("/api/auth",authRouter)
 app.use("/api/user",userRouter)
 
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+    database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+    timestamp: new Date().toISOString()
+  })
+})
+
 app.get("/",async (req,res)=>{
     let prompt=req.query.prompt
    let data= await geminiResponse(prompt)
    res.json(data)
 })
-app.listen(port,()=>{
-    connectDb()
-    console.log('server started')
+
+app.listen(port, async () => {
+    console.log(`Server started on port ${port}`)
+    await connectDb()
 })

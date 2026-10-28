@@ -21,21 +21,27 @@ export const signUp=async(req,res)=>{
 
       const hashedPassword=await bcrypt.hash(password,10)
 
-      const user=await User.create({name,password:hashedPassword,email})
-      const token=await genToken(user._id)
+      const user = await User.create({ name: name.trim(), password: hashedPassword, email: email.toLowerCase().trim() })
+      const token = await genToken(user._id)
       
-      res.cookie("token",token,{
-        httpOnly:true,
-        maxAge:7*24*60*60*1000,
-        sameSite:'strict',
-        secure:false
+      res.cookie("token", token, {
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        sameSite: 'lax',
+        secure: false
       })
 
-      return res.status(201).json(user)
+      const safeUser = user.toObject()
+      delete safeUser.password
+      return res.status(201).json(safeUser)
 
     }
     catch(err){
-        return res.status(500).json({message:`sign up error:${err}`})
+      console.error("Signup error:", err)
+      if (err.code === 11000) {
+        return res.status(400).json({ message: "An account with this email already exists." })
+      }
+      return res.status(500).json({ message: err.message || "Failed to create account." })
     }
 }
 
@@ -62,16 +68,18 @@ export const Login=async(req,res)=>{
       
 
      
-      const token=await genToken(user._id)
+      const token = await genToken(user._id)
       
-      res.cookie("token",token,{
-        httpOnly:true,
-        maxAge:7*24*60*60*1000,
-        sameSite:'strict',
-        secure:false
+      res.cookie("token", token, {
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        sameSite: 'lax',
+        secure: false
       })
 
-      return res.status(200).json(user)
+      const safeUser = user.toObject()
+      delete safeUser.password
+      return res.status(200).json(safeUser)
 
     }
     catch(err){

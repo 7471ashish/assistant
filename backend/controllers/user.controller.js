@@ -45,6 +45,17 @@ export const updateAssistant=async(req,res)=>{
   }
 }
 
+export const clearHistory=async(req,res)=>{
+  try{
+    const user=await User.findByIdAndUpdate(req.userId,{
+      history:[]
+    },{new:true}).select("-password")
+    return res.status(200).json(user)
+  }catch(err){
+    return res.status(500).json({message:"Failed to clear history"})
+  }
+}
+
 
 
 export const askToAssistant=async(req,res)=>{
@@ -58,73 +69,93 @@ export const askToAssistant=async(req,res)=>{
     console.log("USER ID:", id);
 
     const user = await User.findById(id);
-    user.history.push(command)
-    user.save()
-    console.log("USER:", user);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!user.history) {
+      user.history = [];
+    }
+    user.history.push(command);
+    // keep latest 50 history entries
+    if (user.history.length > 50) {
+      user.history = user.history.slice(-50);
+    }
+    await user.save();
 
     const result = await geminiResponse(
       command,
-      user.assistantName,
-      user.name
+      user.assistantName || "Assistant",
+      user.name || "User"
     );
 
-    console.log("GEMINI RESPONSE:");
-    console.log(result);
-
-     const jsonMatch=result.match(/{[\s\S]*}/) 
-   if(!jsonMatch){
-    return res.status(400).json({
-      response:"sorry,I can't understand"
-    })
-   }
-
-      const gemResult=JSON.parse(jsonMatch[0])
-      const type=gemResult.type
-
-      switch(type){
-         case 'get_date':
-          return res.json({
-            type,
-            userInput:gemResult.userInput,
-            response:`current date is ${moment().format("YYYY-MM-DD")}`
-          });
-          case 'get_time':
-          return res.json({
-            type,
-            userInput:gemResult.userInput,
-            response:`current time is ${moment().format("hh:mm:A")}`
-          });
-          case 'get_day':
-          return res.json({
-            type,
-            userInput:gemResult.userInput,
-            response:`today is ${moment().format("dddd")}`
-          });
-          case 'get_month':
-          return res.json({
-            type,
-            userInput:gemResult.userInput,
-            response:`current date is ${moment().format("MMMM")}`
-          });
-          case "general":
-         case 'google_search':
-         case 'youtube_search':
-         case 'youtube_play':  
-         case 'calculator_open': 
-         case 'instagram_open': 
-         case 'facebook_open': 
-         case 'weather_show':
-          return res.json({
-            type,
-            userInput:gemResult.userInput,
-            response:gemResult.response,
-          })
-
-          default:
-            return res.status(400).json({response:"i did understand this command"})
-
-
+    let gemResult = null;
+    const jsonMatch = result.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        gemResult = JSON.parse(jsonMatch[0]);
+      } catch (e) {
+        console.warn("JSON parse error on gemini response:", e);
       }
+    }
+
+    if (!gemResult || !gemResult.response) {
+      const cleanText = result.replace(/```json|```/g, "").trim();
+      return res.json({
+        type: "general",
+        userInput: command,
+        response: cleanText || "I'm right here. How can I assist you?"
+      });
+    }
+
+    const type = gemResult.type || "general";
+
+    switch(type){
+      case 'get_date':
+        return res.json({
+          type,
+          userInput: gemResult.userInput || command,
+          response: `Today's date is ${moment().format("MMMM Do, YYYY")}`
+        });
+      case 'get_time':
+        return res.json({
+          type,
+          userInput: gemResult.userInput || command,
+          response: `The current time is ${moment().format("hh:mm A")}`
+        });
+      case 'get_day':
+        return res.json({
+          type,
+          userInput: gemResult.userInput || command,
+          response: `Today is ${moment().format("dddd")}`
+        });
+      case 'get_month':
+        return res.json({
+          type,
+          userInput: gemResult.userInput || command,
+          response: `The current month is ${moment().format("MMMM")}`
+        });
+      case "general":
+      case 'google_search':
+      case 'youtube_search':
+      case 'youtube_play':  
+      case 'calculator_open': 
+      case 'instagram_open': 
+      case 'facebook_open': 
+      case 'weather_show':
+        return res.json({
+          type,
+          userInput: gemResult.userInput || command,
+          response: gemResult.response,
+        });
+
+      default:
+        return res.json({
+          type: "general",
+          userInput: command,
+          response: gemResult.response || "I didn't quite catch that, could you repeat?"
+        });
+    }
    }
    catch(err){
       console.error(err);
