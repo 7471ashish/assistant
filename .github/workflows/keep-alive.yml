@@ -1,0 +1,20 @@
+name: Keep Backend Alive
+
+on:
+  schedule:
+    # Runs every 14 minutes to prevent Render free-tier from sleeping (Render sleeps after 15m)
+    - cron: '*/14 * * * *'
+  workflow_dispatch: # Allows you to manually trigger the workflow from GitHub Actions tab
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send keep-alive ping to backend
+        env:
+          # Change this to your deployed backend Render URL or configure it in GitHub Secrets
+          BACKEND_URL: ${{ secrets.BACKEND_URL || 'https://assistant-backend-qr2q.onrender.com' }}
+        run: |
+          echo "Pinging backend at $BACKEND_URL..."
+          RESPONSE=$(curl -s -w "\nHTTP_STATUS:%{http_code}" "$BACKEND_URL/api/health" || curl -s -w "\nHTTP_STATUS:%{http_code}" "$BACKEND_URL/")
+          echo "$RESPONSE"
